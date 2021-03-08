@@ -2,11 +2,7 @@
 
 # apt-get install --assume-yes gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools
 
-AUTH="usse-0e3k-6qjr-53bh-5bab"
-
-twitch_auth='live_157756298_YKuHdqiKwSm3gCOLc3Z6FBElJ7SXwq'
-
-serverurl='rtmp://live-arn.twitch.tv/app/'$twitch_auth
+serverurl='rtmp://live-arn.twitch.tv/app/'$TWITCH_AUTH
 
 
 GST_DEBUG="--gst-debug=flvmux:0,rtmpsink:0"
