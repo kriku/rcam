@@ -1,0 +1,63 @@
+#!/bin/sh
+
+# apt-get install --assume-yes gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools
+
+AUTH="usse-0e3k-6qjr-53bh-5bab"
+
+twitch_auth='live_157756298_YKuHdqiKwSm3gCOLc3Z6FBElJ7SXwq'
+
+serverurl='rtmp://live-arn.twitch.tv/app/'$twitch_auth
+
+
+GST_DEBUG="--gst-debug=flvmux:0,rtmpsink:0"
+
+SENSOR_ID=0 # 0 for CAM0 and 1 for CAM1 ports
+FRAMERATE=60 # Framerate can go from 2 to 60 for 1920x1080 mode
+
+AUDIOSRC="pulsesrc device='alsa_output.platform-70030000.hda.hdmi-stereo.monitor'"
+
+#  ! queue ! mux. pulsesrc device=2 ! audioconvert ! queue ! avenc_aac ! queue ! mux. mpegtsmux name=mux
+
+gst-launch-1.0 \
+	-v $GST_DEBUG \
+	-e nvarguscamerasrc sensor-id=$SENSOR_ID \
+	! tee name=t \
+	t. ! queue \
+	! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+	! nvvidconv flip-method=2 \
+       	! nvv4l2h264enc  \
+	! h264parse  \
+	! queue \
+        ! flvmux streamable=true name=mux \
+        ! rtmpsink location=$serverurl \
+	t. ! queue \
+	! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+	! nvvidconv flip-method=2 \
+	! nvoverlaysink
+
+
+# YT_SERVER="rtmp://a.rtmp.youtube.com/live2"
+# Needs AUTH, which is the "Stream Name" from Ingestion Settings > Main Camera
+
+
+
+# gst-launch-1.0 \
+        # -e nvarguscamerasrc sensor-id=$SENSOR_ID \
+	# ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+	# ! nvvidconv flip-method=2 \
+        # ! x264enc bitrate=2000 byte-stream=false key-int-max=60 bframes=0 aud=true tune=zerolatency ! "video/x-h264,profile=main" \
+        # ! flvmux streamable=true name=mux \
+        # ! rtmpsink location="rtmp://a.rtmp.youtube.com/live2/x/${AUTH} app=live2"
+
+# gst-launch-1.0 \
+        # -e nvarguscamerasrc sensor-id=$SENSOR_ID ideotestsrc is-live=1 \
+	# ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+	# ! nvvidconv flip-method=2 \
+	# ! nvv4l2h264enc	! h264parse \
+        # ! queue \
+        # ! x264enc bitrate=2000 byte-stream=false key-int-max=60 bframes=0 aud=true tune=zerolatency ! "video/x-h264,profile=main" \
+        # ! flvmux streamable=true name=mux \
+        # ! rtmpsink location="rtmp://a.rtmp.youtube.com/live2/x/${AUTH} app=live2" \
+        # audiotestsrc \
+        # ! voaacenc bitrate=128000 \
+        # ! mux.
