@@ -4,29 +4,26 @@
 
 serverurl='rtmp://live-arn.twitch.tv/app/'$TWITCH_AUTH
 
-
 GST_DEBUG="--gst-debug=flvmux:0,rtmpsink:0"
 
 SENSOR_ID=0 # 0 for CAM0 and 1 for CAM1 ports
 FRAMERATE=60 # Framerate can go from 2 to 60 for 1920x1080 mode
-
-AUDIOSRC="pulsesrc device='alsa_output.platform-70030000.hda.hdmi-stereo.monitor'"
-
-#  ! queue ! mux. pulsesrc device=2 ! audioconvert ! queue ! avenc_aac ! queue ! mux. mpegtsmux name=mux
+WIDTH=1920
+HEIGHT=1080
 
 gst-launch-1.0 \
 	-v $GST_DEBUG \
 	-e nvarguscamerasrc sensor-id=$SENSOR_ID \
 	! tee name=t \
 	t. ! queue \
-	! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+  ! "video/x-raw(memory:NVMM),width=$WIDTH,height=$HEIGHT,framerate=$FRAMERATE/1" \
 	! nvvidconv flip-method=2 \
-       	! nvv4l2h264enc  \
+  ! nvv4l2h264enc  \
 	! h264parse  \
 	! queue \
-        ! flvmux streamable=true name=mux \
-        ! rtmpsink location=$serverurl \
+  ! flvmux streamable=true name=mux \
+  ! rtmpsink location=$serverurl \
 	t. ! queue \
-	! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+  ! "video/x-raw(memory:NVMM),width=$WIDTH,height=$HEIGHT,framerate=$FRAMERATE/1" \
 	! nvvidconv flip-method=2 \
 	! nvoverlaysink

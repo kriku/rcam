@@ -4,29 +4,23 @@
 
 serverurl='rtmp://live-arn.twitch.tv/app/'$TWITCH_AUTH
 
-
 GST_DEBUG="--gst-debug=flvmux:0,rtmpsink:0"
 
 SENSOR_ID=0 # 0 for CAM0 and 1 for CAM1 ports
-FRAMERATE=30 # Framerate can go from 2 to 60 for 1920x1080 mode
-
-# gst-launch-1.0 \
-        # -e nvarguscamerasrc sensor-id=$SENSOR_ID \
-	# ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
-	# ! nvvidconv flip-method=2 \
-        # ! x264enc bitrate=2000 byte-stream=false key-int-max=60 bframes=0 aud=true tune=zerolatency ! "video/x-h264,profile=main" \
-        # ! flvmux streamable=true name=mux \
-        # ! rtmpsink location="rtmp://a.rtmp.youtube.com/live2/x/${AUTH} app=live2"
+FRAMERATE=60 # Framerate can go from 2 to 60 for 1920x1080 mode
+WIDTH=1920
+HEIGHT=1080
 
 gst-launch-1.0 \
-        -e nvarguscamerasrc sensor-id=$SENSOR_ID nvideotestsrc is-live=1 \
-	! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=$FRAMERATE/1" \
+  -e nvarguscamerasrc sensor-id=$SENSOR_ID nvideotestsrc is-live=1 \
+  ! "video/x-raw(memory:NVMM),width=$WIDTH,height=$HEIGHT,framerate=$FRAMERATE/1" \
 	! nvvidconv flip-method=2 \
 	! nvv4l2h264enc	! h264parse \
-        ! queue \
-        ! x264enc bitrate=2000 byte-stream=false key-int-max=60 bframes=0 aud=true tune=zerolatency ! "video/x-h264,profile=main" \
-        ! flvmux streamable=true name=mux \
-        ! rtmpsink location="rtmp://a.rtmp.youtube.com/live2/x/${AUTH} app=live2" \
-        audiotestsrc \
-        ! voaacenc bitrate=128000 \
-        ! mux.
+  ! queue \
+  ! x264enc bitrate=2000 byte-stream=false key-int-max=60 bframes=0 aud=true tune=zerolatency \
+  ! "video/x-h264,profile=main" \
+  ! flvmux streamable=true name=mux \
+  ! rtmpsink location=$serverurl \
+  audiotestsrc \
+  ! voaacenc bitrate=128000 \
+  ! mux.
